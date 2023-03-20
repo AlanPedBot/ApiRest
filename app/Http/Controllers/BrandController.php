@@ -39,6 +39,7 @@ class BrandController extends Controller
         $brand = Brand::create($request->all());
         return $brand;
     }
+
     /**
      * Display the specified resource.
      *
