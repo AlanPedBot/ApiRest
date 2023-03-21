@@ -7,6 +7,10 @@ use Illuminate\Http\Request;
 
 class BrandController extends Controller
 {
+    public function __construct(Brand $brand)
+    {
+        $this->brand = $brand;
+    }
     /**
      * Display a listing of the resource.
      *
@@ -14,8 +18,9 @@ class BrandController extends Controller
      */
     public function index()
     {
-        $brand = Brand::all();
-        return $brand;
+        // $brand = Brand::all();
+        $brands = $this->brand->all();
+        return response()->json($brands, 200);
     }
 
     /**
@@ -36,19 +41,28 @@ class BrandController extends Controller
      */
     public function store(Request $request)
     {
-        $brand = Brand::create($request->all());
-        return $brand;
+        // $brand = Brand::create($request->all());
+
+        $request->validate($this->brand->rules(), $this->brand->feedback());
+        $image = $request->file('image');
+        $image->store('image', 'public');
+        // $brand = $this->brand->create($request->all());
+        return response()->json($brand, 201);
     }
 
     /**
      * Display the specified resource.
      *
-     * @param  \App\Models\Brand  $brand
+     * @param  Integer
      * @return \Illuminate\Http\Response
      */
-    public function show(Brand $brand)
+    public function show($id)
     {
-        return $brand;
+        $brand = $this->brand->find($id);
+        if ($brand == null) {
+            return response()->json(['erro' => 'nenhum registro encontrado'], 404);
+        }
+        return response()->json($brand, 200);
     }
 
     /**
@@ -66,22 +80,48 @@ class BrandController extends Controller
      * Update the specified resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
-     * @param  \App\Models\Brand  $brand
+     * @param  Integer
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, Brand $brand)
+    public function update(Request $request, $id)
     {
-        //
+
+        $brand = $this->brand->find($id);
+        if ($brand == null) {
+            return response()->json(['erro' => 'Não é possível atualizar, registro não existe!'], 404);
+        }
+        if ($request->method() === 'PATCH') {
+
+            $dynamic_rules = array();
+
+            // Percorrendo as regras definidas no model
+            foreach ($brand->rules() as $input => $rule) {
+
+                if (array_key_exists($input, $request->all())) {
+                    $dynamic_rules[$input] = $rule;
+                }
+            }
+            $request->validate($dynamic_rules, $brand->feedback());
+        } else {
+            $request->validate($this->brand->rules(), $this->brand->feedback());
+        }
+        $brand->update($request->all());
+        return response()->json($brand, 200);
     }
 
     /**
      * Remove the specified resource from storage.
      *
-     * @param  \App\Models\Brand  $brand
+     * @param  Integer
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Brand $brand)
+    public function destroy($id)
     {
-        //
+        $brand = $this->brand->find($id);
+        if ($brand == null) {
+            return response()->json(['erro' => 'Não é possível DELETAR, registro não existe!'], 404);
+        }
+        $brand->delete();
+        return response()->json(['msg' => 'Removido com sucesso'], 200);
     }
 }
