@@ -2,11 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\Storage;
 use App\Models\ModelCar;
 use Illuminate\Http\Request;
 
 class ModelCarController extends Controller
 {
+    public function __construct(ModelCar $modelCar)
+    {
+        $this->modelCar = $modelCar;
+    }
     /**
      * Display a listing of the resource.
      *
@@ -14,7 +19,7 @@ class ModelCarController extends Controller
      */
     public function index()
     {
-        //
+        return response()->json($this->modelCar->with('brand')->get(), 200);
     }
 
     /**
@@ -35,7 +40,21 @@ class ModelCarController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $request->validate($this->modelCar->rules());
+        $image = $request->file('image');
+        $image_urn = $image->store('image/modelCars', 'public');
+
+        $modelCar = $this->modelCar->create([
+            'brand_id' => $request->brand_id,
+            'name' => $request->name,
+            'image' => $image_urn,
+            'number_of_doors' => $request->number_of_doors,
+            'places' => $request->places,
+            'air_bag' => $request->air_bag,
+            'abs' => $request->abs
+
+        ]);
+        return response()->json($modelCar, 201);
     }
 
     /**
@@ -44,9 +63,13 @@ class ModelCarController extends Controller
      * @param  \App\Models\ModelCar  $modelCar
      * @return \Illuminate\Http\Response
      */
-    public function show(ModelCar $modelCar)
+    public function show($id)
     {
-        //
+        $modelCar = $this->modelCar->with('brand')->find($id);
+        if ($modelCar == null) {
+            return response()->json(['erro' => 'nenhum registro encontrado'], 404);
+        }
+        return response()->json($modelCar, 200);
     }
 
     /**
@@ -67,9 +90,43 @@ class ModelCarController extends Controller
      * @param  \App\Models\ModelCar  $modelCar
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, ModelCar $modelCar)
+    public function update(Request $request, $id)
     {
-        //
+        $modelCar = $this->modelCar->find($id);
+
+        if ($modelCar === null) {
+            return response()->json(['erro' => 'Não é possível atualizar, registro não existe!'], 404);
+        }
+
+        if ($request->method() === 'PATCH') {
+
+            $dynamic_rules = array();
+
+            // Percorrendo as regras definidas no model
+            foreach ($modelCar->rules() as $input => $rule) {
+
+                if (array_key_exists($input, $request->all())) {
+                    $dynamic_rules[$input] = $rule;
+                }
+            }
+
+            $request->validate($dynamic_rules);
+        } else {
+            $request->validate($modelCar->rules());
+        }
+        //Remove o arquivo antigo, caso o arquivo seja atualizado ou deletado
+        if ($request->file('image')) {
+            Storage::disk('public')->delete($modelCar->image);
+        }
+        $image = $request->file('image');
+        $image_urn = $image->store('image/modelCars', 'public');
+
+        $modelCar->fill($request->all());
+        $modelCar->image = $image_urn;
+        $modelCar->save();
+
+
+        return response()->json($modelCar, 200);
     }
 
     /**
@@ -78,8 +135,15 @@ class ModelCarController extends Controller
      * @param  \App\Models\ModelCar  $modelCar
      * @return \Illuminate\Http\Response
      */
-    public function destroy(ModelCar $modelCar)
+    public function destroy($id)
     {
-        //
+        $modelCar = $this->modelCar->find($id);
+        if ($modelCar == null) {
+            return response()->json(['erro' => 'Não é possível DELETAR, registro não existe!'], 404);
+        }
+        // Remove o arquivo antigo, caso o arquivo seja atualizado ou deletado
+        Storage::disk('public')->delete($modelCar->image);
+        $modelCar->delete();
+        return response()->json(['msg' => 'Removido com sucesso'], 200);
     }
 }

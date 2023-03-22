@@ -19,8 +19,7 @@ return new class extends Migration
             $table->string('name', 30);
             $table->string('image', 100);
             $table->integer('number_of_doors');
-            $table->integer('
-            places');
+            $table->integer('places');
             $table->boolean('air_bag');
             $table->boolean('abs');
             $table->timestamps();
