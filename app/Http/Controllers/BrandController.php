@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\Storage;
 use App\Models\Brand;
+use App\Repositories\BrandRepository;
 use Illuminate\Http\Request;
+use Illuminate\Database\Eloquent\Model;
 
 class BrandController extends Controller
 {
@@ -17,10 +19,41 @@ class BrandController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        // $brand = Brand::all();
-        $brands = $this->brand->with('modelCar')->get();
+        // $brandRepository = new BrandRepository()
+
+
+
+
+
+
+
+        $brands = array();
+
+        if ($request->has('attribute_model')) {
+            $attributes_models = $request->attribute_model;
+            $brands = $this->brand->with('modelCar:id,' . $attributes_models);
+        } else {
+            $brands = $this->brand->with('modelCar');
+        }
+
+
+        if ($request->has('filter')) {
+            $filter = explode(';', $request->filter);
+            foreach ($filter as $key => $condition) {
+                $conditions = explode(':', $condition);
+                $brands = $brands->where($conditions[0], $conditions[1], $conditions[2]);
+            }
+        }
+
+        if ($request->has('attribute')) {
+            $attributes = $request->attribute;
+            $brands = $brands->selectRaw($attributes)->get();
+        } else {
+            $brands = $brands->get();
+        }
+
         return response()->json($brands, 200);
     }
 

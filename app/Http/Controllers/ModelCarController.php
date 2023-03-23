@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\Storage;
 use App\Models\ModelCar;
+use Hamcrest\Core\HasToString;
 use Illuminate\Http\Request;
 
 class ModelCarController extends Controller
@@ -17,9 +18,31 @@ class ModelCarController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
-        return response()->json($this->modelCar->with('brand')->get(), 200);
+        $models = array();
+
+        if ($request->has('attribute_brand')) {
+            $attributes_brand = $request->attribute_brand;
+            $models = $this->modelCar->with('brand:id,' . $attributes_brand);
+        } else {
+            $models = $this->modelCar->with('brand');
+        }
+        if ($request->has('filter')) {
+            $filter = explode(';', $request->filter);
+            foreach ($filter as $key => $condition) {
+                $conditions = explode(':', $condition);
+                $models = $models->where($conditions[0], $conditions[1], $conditions[2]);
+            }
+        }
+
+        if ($request->has('attribute')) {
+            $attributes = $request->attribute;
+            $models = $models->selectRaw($attributes)->get();
+        } else {
+            $models = $models->get();
+        }
+        return response()->json($models, 200);
     }
 
     /**
