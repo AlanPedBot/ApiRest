@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Models\ModelCar;
 use Hamcrest\Core\HasToString;
 use Illuminate\Http\Request;
+use App\Repositories\ModelRepository;
 
 class ModelCarController extends Controller
 {
@@ -20,29 +21,21 @@ class ModelCarController extends Controller
      */
     public function index(Request $request)
     {
-        $models = array();
+        $modelRepository = new ModelRepository($this->modelCar);
 
         if ($request->has('attribute_brand')) {
-            $attributes_brand = $request->attribute_brand;
-            $models = $this->modelCar->with('brand:id,' . $attributes_brand);
+            $attributes_brand = 'brand:id,' . $request->attribute_brand;
+            $modelRepository->selectAttribute($attributes_brand);
         } else {
-            $models = $this->modelCar->with('brand');
+            $modelRepository->selectAttribute('brand');
         }
         if ($request->has('filter')) {
-            $filter = explode(';', $request->filter);
-            foreach ($filter as $key => $condition) {
-                $conditions = explode(':', $condition);
-                $models = $models->where($conditions[0], $conditions[1], $conditions[2]);
-            }
+            $modelRepository->filter($request->filter);
         }
-
         if ($request->has('attribute')) {
-            $attributes = $request->attribute;
-            $models = $models->selectRaw($attributes)->get();
-        } else {
-            $models = $models->get();
+            $modelRepository->selectAttributeQuery($request->attribute);
         }
-        return response()->json($models, 200);
+        return response()->json($modelRepository->getResult(), 200);
     }
 
     /**

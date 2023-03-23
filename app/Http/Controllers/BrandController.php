@@ -4,9 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\Storage;
 use App\Models\Brand;
-use App\Repositories\BrandRepository;
 use Illuminate\Http\Request;
-use Illuminate\Database\Eloquent\Model;
+use App\Repositories\BrandRepository;
 
 class BrandController extends Controller
 {
@@ -21,40 +20,21 @@ class BrandController extends Controller
      */
     public function index(Request $request)
     {
-        // $brandRepository = new BrandRepository()
-
-
-
-
-
-
-
-        $brands = array();
+        $brandRepository = new BrandRepository($this->brand);
 
         if ($request->has('attribute_model')) {
-            $attributes_models = $request->attribute_model;
-            $brands = $this->brand->with('modelCar:id,' . $attributes_models);
+            $attributes_models = 'modelCar:id,' . $request->attribute_model;
+            $brandRepository->selectAttribute($attributes_models);
         } else {
-            $brands = $this->brand->with('modelCar');
+            $brandRepository->selectAttribute('modelCar');
         }
-
-
         if ($request->has('filter')) {
-            $filter = explode(';', $request->filter);
-            foreach ($filter as $key => $condition) {
-                $conditions = explode(':', $condition);
-                $brands = $brands->where($conditions[0], $conditions[1], $conditions[2]);
-            }
+            $brandRepository->filter($request->filter);
         }
-
         if ($request->has('attribute')) {
-            $attributes = $request->attribute;
-            $brands = $brands->selectRaw($attributes)->get();
-        } else {
-            $brands = $brands->get();
+            $brandRepository->selectAttributeQuery($request->attribute);
         }
-
-        return response()->json($brands, 200);
+        return response()->json($brandRepository->getResult(), 200);
     }
 
     /**
