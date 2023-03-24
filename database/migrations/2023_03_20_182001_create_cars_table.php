@@ -17,8 +17,7 @@ return new class extends Migration
             $table->id();
             $table->unsignedBigInteger('modelCar_id');
             $table->string('plate', 10)->unique();
-            $table->boolean('
-            available');
+            $table->boolean('available');
             $table->integer('km');
             $table->timestamps();
 
