@@ -1,0 +1,9 @@
+array(3) {
+  ["name"]=>
+  string(5) "Alan
+"
+  ["email"]=>
+  string(19) "alanteste@gmail.com"
+  ["password"]=>
+  string(60) "$2y$10$4HV7KxfzZKaaETDv.95hF.frmtGQvFX0RxM5Y93UzCuy84u3sKvJe"
+}
